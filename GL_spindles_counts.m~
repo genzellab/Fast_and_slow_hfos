@@ -1,0 +1,447 @@
+%GL_spindles_counts.
+%Detects spindles and computes coocurrence with hfos and ripples.
+% Requires 'load_me_first.mat' loaded first. 
+
+%% Find location
+% close all
+% dname=uigetdir([],'Select folder with Matlab data containing all rats.');
+% cd(dname)
+cd('/home/adrian/Documents/Plusmaze_downsampled')
+
+%%
+%Select rat number
+opts.Resize = 'on';
+opts.WindowStyle = 'modal';
+opts.Interpreter = 'tex';
+prompt=strcat('\bf Select a rat#. Options:','{ }',num2str(rats));
+answer = inputdlg(prompt,'Input',[2 30],{''},opts);
+Rat=str2num(answer{1});
+cd(num2str(Rat))
+%%
+%Cortical regions.
+yy={'PAR'};    
+xx={'PFC'};  
+%Sampling freq.
+fn=1000;
+
+%%
+labelconditions=getfolder;
+labelconditions=labelconditions.';
+g=labelconditions;
+
+multiplets=[{'singlets'} {'doublets'} {'triplets'} {'quatruplets'} {'pentuplets'} {'sextuplets'} {'septuplets'} {'octuplets'} {'nonuplets'}];
+iii=1;
+
+%% Select conditions and sessions
+    %Center figure.
+    f=figure();
+    movegui(gcf,'center');
+
+    %Checkboxes
+    Boxcheck = cell(1,4);
+    for h1=1:length(labelconditions)
+    boxcheck = uicontrol(f,'Style','checkbox','String',labelconditions{h1},'Position',[10 f.Position(4)-30*h1 400 20]);
+    boxcheck.FontSize=11;
+    boxcheck.Value=1;
+    Boxcheck{h1}=boxcheck;   
+    end
+
+    set(f, 'NumberTitle', 'off', ...
+        'Name', 'Select conditions');
+
+    %Push button
+    c = uicontrol;
+    c.String = 'Continue';
+    c.FontSize=10;
+    c.Position=[f.Position(1)/3.5 c.Position(2)-10 f.Position(3)/2 c.Position(4)];
+
+    %Callback
+    c.Callback='uiresume(gcbf)';
+    uiwait(gcf); 
+    boxch=cellfun(@(x) get(x,'Value'),Boxcheck);
+    clear Boxcheck
+
+    close(f);
+g={g{logical(boxch)}};    
+%xo
+if sum(cell2mat(cellfun(@(equis1) contains(equis1,'nl'),g,'UniformOutput',false)))==1
+g=g([find(cell2mat(cellfun(@(equis1) contains(equis1,labelconditions2{1}),g,'UniformOutput',false)))...
+ find(cell2mat(cellfun(@(equis1) contains(equis1,labelconditions2{2}),g,'UniformOutput',false)))...
+ find(cell2mat(cellfun(@(equis1) contains(equis1,labelconditions2{3}),g,'UniformOutput',false)))...
+ find(cell2mat(cellfun(@(equis1) contains(equis1,labelconditions2{4}),g,'UniformOutput',false)))]);
+
+else
+    error('Name issue')
+end
+
+%%
+f=waitbar(0,'Please wait...');
+    for k=1:length(g)
+cd(g{k})
+CORTEX=dir(strcat('*',xx{1},'*.mat'));
+if isempty(CORTEX)
+    g=g(~contains(g,g{k}));
+    cd ..
+    progress_bar(k,length(g),f)
+    break
+end
+CORTEX=CORTEX.name;
+CORTEX=load(CORTEX);
+CORTEX=getfield(CORTEX,xx{1});
+CORTEX=CORTEX.*(0.195);
+
+A = dir('*states*.mat');
+A={A.name};
+
+if  ~isempty(A)
+       cellfun(@load,A);
+else
+      error('No Scoring found')    
+end
+
+%Find PFC spindles
+[ripple,RipFreq,rip_duration,Mx_cortex,timeasleep,sig_cortex,Ex_cortex,Sx_cortex,...
+  ripple_multiplets_cortex,RipFreq_multiplets_cortex,rip_duration_multiplets_cortex,sig_multiplets_cortex,~, ...
+  ]=gui_findspindlesYASA(CORTEX,states,xx,multiplets,fn);
+
+si=sig_cortex(~cellfun('isempty',sig_cortex));
+si=[si{:}];
+
+All_Par.( strrep(g{k},'-','_'))=si;
+
+print_hist=0; %Print histogram? yes=1, no=0.
+[x,y,z,~,~,~,l,p]=hfo_specs_spindles(si,timeasleep,fn,print_hist);
+if print_hist==1
+cd ..
+printing(['Histograms_Spindles_' xx{1} '_Count_' g{k}]);
+close all
+cd(g{k})
+end
+
+fi_cortex(k)=x;
+fa_cortex(k)=y;
+amp_cortex(k)=z;
+auc_cortex(k)=l;
+p2p_cortex(k)=p;
+
+%% Cortical HFOs
+    hfos_cortex(k)=ripple;
+    hfos_cortex_rate(k)=RipFreq;
+    hfos_cortex_duration(k)=rip_duration;
+    clear ripple RipFreq
+
+%Multiplets    
+for ll=1:3
+   eval(['hfos_cortex_' multiplets{ll} '(k)=ripple_multiplets_cortex.' multiplets{ll} ';']) 
+   eval(['hfos_cortex_rate_' multiplets{ll} '(k)=RipFreq_multiplets_cortex.' multiplets{ll} ';']) 
+   eval(['hfos_cortex_duration_' multiplets{ll} '(k)=rip_duration_multiplets_cortex.' multiplets{ll} ';'])    
+end
+    
+%% PARIETAL SPINDLES.
+%Despite variable used is called HPC this is actually Parietal as indicated
+%by 'yy'. 
+
+HPC=dir(strcat('*',yy{1},'*.mat'));
+if isempty(HPC)
+    g=g(~contains(g,g{k}));
+    cd ..
+    progress_bar(k,length(g),f)
+    break
+end
+
+HPC=HPC.name;
+HPC=load(HPC);
+HPC=getfield(HPC,yy{1});
+HPC=HPC.*(0.195);
+
+[ripple,RipFreq,rip_duration,Mx_hpc,timeasleep,sig_hpc,Ex_hpc,Sx_hpc,...
+  ripple_multiplets_hpc,RipFreq_multiplets_hpc,rip_duration_multiplets_hpc,sig_multiplets_hpc,Mx_multiplets_hpc...    
+  ]=gui_findspindlesYASA(HPC,states,yy,multiplets,fn);
+
+si=sig_hpc(~cellfun('isempty',sig_hpc));
+si=[si{:}];
+
+All_HPC.( strrep(g{k},'-','_'))=si;
+
+print_hist=0;
+[x,y,z,~,~,~,l,p]=hfo_specs_spindles(si,timeasleep,fn,print_hist);
+if print_hist==1
+    cd ..
+    printing(['Histograms_Spindles_' yy{1} '_Count_' g{k}]);
+    close all
+    cd(g{k})
+end
+%Main features of spindle
+fi_hpc(k)=x;
+fa_hpc(k)=y;
+amp_hpc(k)=z;
+auc_hpc(k)=l;
+p2p_hpc(k)=p;
+
+%% HFOs
+hfos_hpc(k)=ripple;
+hfos_hpc_rate(k)=RipFreq;
+hfos_hpc_duration(k)=rip_duration;
+
+%Multiplets    
+for ll=1:length(multiplets)
+   eval(['hfos_hpc_' multiplets{ll} '(k)=ripple_multiplets_hpc.' multiplets{ll} ';']) 
+   eval(['hfos_hpc_rate_' multiplets{ll} '(k)=RipFreq_multiplets_hpc.' multiplets{ll} ';']) 
+   eval(['hfos_hpc_duration_' multiplets{ll} '(k)=rip_duration_multiplets_hpc.' multiplets{ll} ';'])    
+end
+% xo
+%% Coocurent hfos with PFC spindle
+[cohfos1,cohfos2]=cellfun(@(equis1,equis2,equis3,equis4,equis5,equis6) co_hfo_spindle(equis1,equis2,equis3,equis4,equis5,equis6),Sx_hpc,Mx_hpc,Ex_hpc,Sx_cortex,Mx_cortex,Ex_cortex,'UniformOutput',false);
+%Remove repeated values
+[cohfos1,cohfos2]=cellfun(@(equis1,equis2) coocur_repeat(equis1,equis2), cohfos1,cohfos2,'UniformOutput',false);
+
+
+%cohfos1: HPC.
+%cohfos2: Cortex.
+%Common values:
+cohfos_count(k)=sum(cellfun('length',cohfos1));
+cohfos_rate(k)=sum(cellfun('length',cohfos1))/(timeasleep*(60));
+
+%Multiplet cohfos
+for ll=1:length(multiplets)
+[cohfos1_multiplets.(multiplets{ll}),cohfos2_multiplets.(multiplets{ll})]=cellfun(@(equis1,equis2) co_hfo(equis1,equis2),Mx_multiplets_hpc.(multiplets{ll}).',Mx_cortex,'UniformOutput',false);
+cohfos_count_multiplets.(multiplets{ll})(k)=sum(cellfun('length',cohfos1_multiplets.(multiplets{ll})));
+cohfos_rate_multiplets.(multiplets{ll})(k)=sum(cellfun('length',cohfos1_multiplets.(multiplets{ll})))/(timeasleep*(60));
+end
+%%
+
+%HPC COHFOS
+cohf_mx_hpc=Mx_hpc(~cellfun('isempty',cohfos1));%Peak values cells where HPC cohfos were found.
+cohf_sx_hpc=Sx_hpc(~cellfun('isempty',cohfos1));%Peak values cells where HPC cohfos were found.
+cohf_ex_hpc=Ex_hpc(~cellfun('isempty',cohfos1));%Peak values cells where HPC cohfos were found.
+
+Cohfos1=cohfos1(~cellfun('isempty',cohfos1));
+
+%Locate sample per cohfos
+coh_samp_hpc= cellfun(@(equis1,equis2) co_hfo_get_sample(equis1,equis2),cohf_mx_hpc,Cohfos1,'UniformOutput',false);
+
+cohf_sx_hpc_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_sx_hpc,coh_samp_hpc,'UniformOutput',false);
+cohf_sx_hpc_val=[cohf_sx_hpc_val{:}];
+
+cohf_mx_hpc_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_mx_hpc,coh_samp_hpc,'UniformOutput',false);
+cohf_mx_hpc_val=[cohf_mx_hpc_val{:}];
+
+cohf_ex_hpc_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_ex_hpc,coh_samp_hpc,'UniformOutput',false);
+cohf_ex_hpc_val=[cohf_ex_hpc_val{:}];
+
+cohf_hpc_dura=cohf_ex_hpc_val-cohf_sx_hpc_val;
+cohf_hpc_dura=median(cohf_hpc_dura);
+Cohf_hpc_dura(k)=cohf_hpc_dura;
+
+Sig_hpc=sig_hpc(~cellfun('isempty',cohfos1));
+Sig_hpc=cellfun(@(equis1,equis2) equis1(equis2),Sig_hpc,coh_samp_hpc,'UniformOutput',false);
+Sig_hpc=[Sig_hpc{:}];
+
+[x,y,z,w,h,q,l,p]=hfo_specs_spindles(Sig_hpc,timeasleep,fn,0);
+fi_cohfo_hpc(k)=x;
+fa_cohfo_hpc(k)=y;
+amp_cohfo_hpc(k)=z;
+count_cohfo_hpc(k)=w;
+rate_cohfo_hpc(k)=h;
+dura_cohfo_hpc(k)=q;
+auc_cohfo_hpc(k)=l;
+p2p_cohfo_hpc(k)=p;
+
+%Single HFOs HPC
+v2=cellfun(@(equis1,equis2) single_hfo_get_sample(equis1,equis2),Mx_hpc,cohfos1,'UniformOutput',false);
+
+Sig_hpc_single=cellfun(@(equis1,equis2) equis1(equis2),sig_hpc,v2,'UniformOutput',false);
+Sig_hpc_single=[Sig_hpc_single{:}];
+
+
+[single_mx_hpc_val,single_sx_hpc_val]=cellfun(@(equis1,equis2,equis3) single_hfos_mx(equis1,equis2,equis3),cohfos1,Mx_hpc,Sx_hpc,'UniformOutput',false);
+single_mx_hpc_val=[single_mx_hpc_val{:}];
+single_sx_hpc_val=[single_sx_hpc_val{:}];
+
+[x,y,z,w,h,q,l,p]=hfo_specs_spindles(Sig_hpc_single,timeasleep,fn,0);
+fi_single_hpc(k)=x;
+fa_single_hpc(k)=y;
+amp_single_hpc(k)=z;
+count_single_hpc(k)=w;
+rate_single_hpc(k)=h;
+dura_single_hpc(k)=q;
+auc_single_hpc(k)=l;
+p2p_single_hpc(k)=p;
+
+
+%%%%
+%Cortical COHFOS
+cohf_mx_cortex=Mx_cortex(~cellfun('isempty',cohfos2));%Peak values cells where cortex cohfos were found.
+cohf_sx_cortex=Sx_cortex(~cellfun('isempty',cohfos2));%Peak values cells where cortex cohfos were found.
+cohf_ex_cortex=Ex_cortex(~cellfun('isempty',cohfos2));%Peak values cells where cortex cohfos were found.
+
+Cohfos2=cohfos2(~cellfun('isempty',cohfos2));
+
+%Locate sample per cohfos
+coh_samp_cortex= cellfun(@(equis1,equis2) co_hfo_get_sample(equis1,equis2),cohf_mx_cortex,Cohfos2,'UniformOutput',false);
+cohf_sx_cortex_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_sx_cortex,coh_samp_cortex,'UniformOutput',false);
+cohf_sx_cortex_val=[cohf_sx_cortex_val{:}];
+
+cohf_mx_cortex_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_mx_cortex,coh_samp_cortex,'UniformOutput',false);
+cohf_mx_cortex_val=[cohf_mx_cortex_val{:}];
+
+cohf_ex_cortex_val=cellfun(@(equis1,equis2) equis1(equis2),cohf_ex_cortex,coh_samp_cortex,'UniformOutput',false);
+cohf_ex_cortex_val=[cohf_ex_cortex_val{:}];
+cohf_cortex_dura=cohf_ex_cortex_val-cohf_sx_cortex_val;
+cohf_cortex_dura=median(cohf_cortex_dura);
+Cohf_cortex_dura(k)=cohf_cortex_dura;
+
+Sig_cortex=sig_cortex(~cellfun('isempty',cohfos2));
+Sig_cortex=cellfun(@(equis1,equis2) equis1(equis2),Sig_cortex,coh_samp_cortex,'UniformOutput',false);
+Sig_cortex=[Sig_cortex{:}];
+
+[x,y,z,w,h,q,l,p]=hfo_specs_spindles(Sig_cortex,timeasleep,fn,0);
+fi_cohfo_cortex(k)=x;
+fa_cohfo_cortex(k)=y;
+amp_cohfo_cortex(k)=z;
+count_cohfo_cortex(k)=w;
+rate_cohfo_cortex(k)=h;
+dura_cohfo_cortex(k)=q;
+auc_cohfo_cortex(k)=l;
+p2p_cohfo_cortex(k)=p;
+
+%Single HFOs Cortex
+v2=cellfun(@(equis1,equis2) single_hfo_get_sample(equis1,equis2),Mx_cortex,cohfos2,'UniformOutput',false);
+
+Sig_cortex_single=cellfun(@(equis1,equis2) equis1(equis2),sig_cortex,v2,'UniformOutput',false);
+Sig_cortex_single=[Sig_cortex_single{:}];
+
+[single_mx_cortex_val,single_sx_cortex_val]=cellfun(@(equis1,equis2,equis3) single_hfos_mx(equis1,equis2,equis3),cohfos2,Mx_cortex,Sx_cortex,'UniformOutput',false);
+single_mx_cortex_val=[single_mx_cortex_val{:}];
+single_sx_cortex_val=[single_sx_cortex_val{:}];
+
+
+[x,y,z,w,h,q,l,p]=hfo_specs_spindles(Sig_cortex_single,timeasleep,fn,0);
+fi_single_cortex(k)=x;
+fa_single_cortex(k)=y;
+amp_single_cortex(k)=z;
+count_single_cortex(k)=w;
+rate_single_cortex(k)=h;
+dura_single_cortex(k)=q;
+auc_single_cortex(k)=l;
+p2p_single_cortex(k)=p;
+
+progress_bar(k,length(g),f)
+    cd ..    
+    end
+  xo
+
+A_cell = struct2cell(All_Par);
+All_Par_26=[A_cell{:}];
+hfo_specs_spindles(All_Par_26,timeasleep,fn,1)
+printing(['HistogramSpindles_' num2str(Rat) '_All_PFC_count'])
+close all
+
+
+A_cell = struct2cell(All_HPC);
+All_Par_26=[A_cell{:}];
+hfo_specs_spindles(All_Par_26,timeasleep,fn,1)
+printing(['HistogramSpindles_' num2str(Rat) '_All_PAR_count'])
+close all
+
+%%
+    TT=table;
+    TT.Variables=    [[{['Count_' xx{1} '_total']};{['Count_' yy{1} '_total']};{['Count_coocur_' xx{1} '_' yy{1}]};{['Count_single_' xx{1}]};{['Count_single_' yy{1}]}] num2cell([...
+        hfos_cortex;hfos_hpc;count_cohfo_hpc;count_single_cortex;count_single_hpc])];
+
+    TT.Properties.VariableNames=['Metric';cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false).'].';
+
+            writetable(TT,strcat(xx{1},'_',yy{1},'_spindles','.xls'),'Sheet',1,'Range','A2:L10')    
+%%
+    %%
+    %All detections cortex
+%     xo
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([hfos_cortex;hfos_cortex_rate;hfos_cortex_duration;fa_cortex;fi_cortex; amp_cortex])];
+%     TT.Variables=    [[{'Count'};{'Rate'};{'Duration'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration])];
+    
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(xx{1},'_Features_spindles','.xls'),'Sheet',1,'Range','A2:L10')    
+
+%            writetable(TT,strcat(xx{1},'_spindles','.xls'),'Sheet',1,'Range','A2:L10')    
+%     end
+
+%%
+%Cortex cohfos
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([count_cohfo_cortex;rate_cohfo_cortex;dura_cohfo_cortex;fa_cohfo_cortex;fi_cohfo_cortex; amp_cohfo_cortex])];
+%     TT.Variables=    [[{'Count'};{'Rate'};{'Duration'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration])];
+    
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(xx{1},'_spindles','_cohfos','.xls'),'Sheet',1,'Range','A2:L10')    
+
+%Cortex singles
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([count_single_cortex;rate_single_cortex;dura_single_cortex;fa_single_cortex;fi_single_cortex; amp_single_cortex])];
+%     TT.Variables=    [[{'Count'};{'Rate'};{'Duration'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration])];
+    
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(xx{1},'_spindles','_singles','.xls'),'Sheet',1,'Range','A2:L10')    
+
+  %%  HPC        
+%All detections
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration;fa_hpc;fi_hpc;amp_hpc])];        
+%    TT.Properties.VariableNames=['Metric';g];
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(yy{1},'_Features_spindles','.xls'),'Sheet',1,'Range','A2:L10')    
+%     end
+
+
+%%
+%hpc cohfos
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([count_cohfo_hpc;rate_cohfo_hpc;dura_cohfo_hpc;fa_cohfo_hpc;fi_cohfo_hpc; amp_cohfo_hpc])];
+%     TT.Variables=    [[{'Count'};{'Rate'};{'Duration'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration])];
+    
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(yy{1},'_spindles','_cohfos_','.xls'),'Sheet',1,'Range','A2:L10')    
+
+%hpc singles
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'};{'Duration'};{'Average Frequency'};{'Instantaneous Frequency'};{'Amplitude'}] num2cell([count_single_hpc;rate_single_hpc;dura_single_hpc;fa_single_hpc;fi_single_hpc; amp_single_hpc])];
+%     TT.Variables=    [[{'Count'};{'Rate'};{'Duration'}] num2cell([hfos_hpc;hfos_hpc_rate;hfos_hpc_duration])];
+    
+    TT.Properties.VariableNames=['Metric' cellfun(@(equis) strrep(equis,'_','-'),g,'UniformOutput',false)].';
+    
+%     if strcmp(xx{1},'HPC')
+%             writetable(TT,strcat(xx{1},'_',num2str(tr(1)),'.xls'),'Sheet',1,'Range','A2:L6')    
+%     else
+            writetable(TT,strcat(yy{1},'_spindles','_singles','.xls'),'Sheet',1,'Range','A2:L10')    
+
+
+
+%%
+%COHFOS
+    
+    TT=table;
+    TT.Variables=    [[{'Count'};{'Rate'}] num2cell([cohfos_count;cohfos_rate;])];
+    TT.Properties.VariableNames=['Metric';g];    
+    writetable(TT,strcat('coHFOs_spindles',num2str(tr(2)),'.xls'),'Sheet',1,'Range','A2:L6')    
+    
+
