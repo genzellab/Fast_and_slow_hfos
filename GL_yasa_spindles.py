@@ -11,7 +11,7 @@ sns.set(font_scale=1.2)
 
 #data = np.loadtxt('data_spindles_15s_200Hz.txt')
 mat=scipy.io.loadmat('YASA_PAR.mat')
-aver=mat['V_hpc']
+aver=mat['V_par']
 
 averout=aver
 ajalas=np.zeros((1,aver.size))
