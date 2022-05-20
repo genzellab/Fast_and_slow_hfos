@@ -16,7 +16,10 @@ Reference:  [doi.org/10.1101/765149](https://doi.org/10.1101/765149)
 
 
 :warning: Requirements: Makes use of functions from the [YASA](https://github.com/raphaelvallat/yasa) , [Fieldtrip](https://github.com/fieldtrip/fieldtrip) and [ADRITOOLS](https://github.com/Aleman-Z/ADRITOOLS) repositories. 
+
 These last two need to be added to the path.
+
+We also include in the subfunctions folder some functions taken from [FMA toolbox](https://github.com/michael-zugaro/FMAToolbox/tree/master/Analyses)
 
 _Required Matlab built-in toolboxes:_
 •	Image Processing Toolbox
@@ -48,6 +51,7 @@ _Figure 2D: Shuffling Plusmaze co-occurrence control._
 
 _Figure 3: Spectral power during events._
   * GL_spectral_power.m 
+  * GL_spectral_power_2021.m
 
 _Figure 4A: Spindles counts_
   * GL_spindles_counts.m *
@@ -60,10 +64,21 @@ _Figure 4 (F,G): Spindle co-occurrence shuffling control_
 
 _Figure 6: Granger causality during events._
   * GL_granger.m
+  
+_New (2021):_ 
+  * GL_swr_disruption.m
 
-
+_Newer (2022):_ 
+  * GL_delta_counts.m
+  * GL_spindles_counts_nayanika.m *
+  * GL_spindles_Nayanika.m *
+  * GL_delta_spindles.* (Computes the co-occurrence of deltas an spindles from PPC and PFC as done by [Kim et al.,Cell, 2019](https://www.cell.com/cell/pdf/S0092-8674(19)30959-6.pdf))
+  * GL_granger_Nayanika.m (Computes spectral Granger Causality analysis after combining events of all rats).
+  
 ---------
-*Spindles were previously detected using the YASA algorithm. The steps to do this were:
+*In the current version (2022): Spindles were computed using an adaptation of the FindSpindles.m function from [FMA toolbox](https://github.com/michael-zugaro/FMAToolbox/tree/master/Analyses) (Zugaro lab).
+
+*In the older version (2020): Spindles were previously detected using the YASA algorithm. The steps to do this were:
 1. Run GL_spindle_matlab2python.m for every session per condition to export NREM epochs to python.
 2. Run GL_yasa_spindles.py for every session per condition to save detections in a .mat file.
 
