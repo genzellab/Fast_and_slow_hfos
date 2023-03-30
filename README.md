@@ -86,3 +86,6 @@ _**Figure 4I**:_
 2. Run GL_yasa_spindles.py for every session per condition to save detections in a .mat file.
 
 --------------------------------
+
+## Outdated fork.
+[Plusmaze 2022 update](https://github.com/nayanikab20/GL_fast_slow_hfos) (Nayanika) 
