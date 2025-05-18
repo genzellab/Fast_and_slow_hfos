@@ -61,7 +61,7 @@ This repository relies on:
 - **Figure 2B, 2D** – Count co-occurring/single events, slow/fast counts and rates:  
   `GL_hfos_counts.m`
 
-- **Text Analysis – Ripple-HFO shuffling controls:**  
+- **Analysis mentioned in text – Ripple-HFO shuffling controls:**  
   `GL_ripples_hfos_control.m`  
   `GL_plusmaze_control.m`
 
@@ -95,7 +95,7 @@ This repository relies on:
   `GL_spindles.m` (2020)  
   `GL_spindles_Nayanika.m` (2022)
 
-- **Text Analysis – Spindle co-occurrence control:**  
+- **Analysis mentioned in text – Spindle co-occurrence control:**  
   `GL_spindles_control.m`
 
 - **Figure 4I** – SWR disruption:  
