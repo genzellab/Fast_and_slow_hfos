@@ -1,91 +1,134 @@
-# Fast and slow cortical high frequency oscillations for cortico-cortical and corticohippocampal network consolidation during NonREM sleep. 
+# 🧠 Fast and Slow Cortical High-Frequency Oscillations During NonREM Sleep
 
-Adrian Aleman-Zapata 1, Richard GM Morris 2, Lisa Genzel *1,2
+This repository contains code and analyses for the project:
 
-*corresponding author: lgenzel@donders.ru.nl  :mailbox: 
+**Fast and slow cortical high frequency oscillations for cortico-cortical and cortico-hippocampal network consolidation during NonREM sleep.**  
+📖 [Preprint on bioRxiv](https://doi.org/10.1101/765149)
 
-1, Donders Institute for Brain Cognition and Behavior, Radboud University, Postbus 9010, 6500GL Nijmegen/Netherlands.
+This project later became the published paper:
 
-2, Centre for Cognitive and Neural Systems, Edinburgh Neuroscience, University of Edinburgh, 1 George Square, Edinburgh EH8 9JZ, UK.
-
-Reference:  [doi.org/10.1101/765149](https://doi.org/10.1101/765149) 
-
------------------------------
+**Sleep deprivation and hippocampal ripple disruption after one-session learning eliminate memory expression the next day.**  
+📖 [PNAS paper](https://doi.org/10.1073/pnas.2123424119)
 
 
 
+**Authors:**  
+Adrián Alemán-Zapata¹, Richard G.M. Morris², Lisa Genzel*¹²  
+\*Corresponding author: [lgenzel@donders.ru.nl](mailto:lgenzel@donders.ru.nl)
 
-:warning: Requirements: Makes use of functions from the [YASA](https://github.com/raphaelvallat/yasa) (only used in the older version of the manuscript 2020), [Fieldtrip](https://github.com/fieldtrip/fieldtrip) (Suggest to use 2019 version to avoid plotting issues) and [ADRITOOLS](https://github.com/Aleman-Z/ADRITOOLS) repositories. 
+**Affiliations:**  
+1. Donders Institute for Brain, Cognition and Behaviour, Radboud University, Nijmegen, Netherlands  
+2. Centre for Cognitive and Neural Systems, University of Edinburgh, UK
 
-These last two need to be added to the path.
+---
 
-We also include in the subfunctions folder some functions borrowed from [FMA toolbox](https://github.com/michael-zugaro/FMAToolbox/tree/master/Analyses)
+## ⚙️ Requirements
 
-_Required Matlab built-in toolboxes:_
-•	Image Processing Toolbox
-•	Signal Processing Toolbox
-•	Statistics and Machine Learning Toolbox
-•	Mapping Toolbox
-•	Deep Learning Toolbox
-•	Symbolic Math Toolbox
-•	Bioinformatics Toolbox
-•	Computer Vision Toolbox
-•	Fixed-Point Designer
-•	MATLAB Coder
-•	Simulink
-•	Parallel Computing Toolbox
-•	MATLAB Parallel Server
-•	Polyspace Bug Finder
+This repository relies on:
 
---------------------------------
-## Main scripts: :file_folder: 
+### 📦 Toolboxes and Dependencies
 
-_**Figure 2B and 2D:** Count of coocurring and single events, as well as slow and fast counts and rates._
-  * GL_hfos_counts.m
+- **MATLAB toolboxes:**
+  - Image Processing Toolbox
+  - Signal Processing Toolbox
+  - Statistics and Machine Learning Toolbox
+  - Mapping Toolbox
+  - Deep Learning Toolbox
+  - Symbolic Math Toolbox
+  - Bioinformatics Toolbox
+  - Computer Vision Toolbox
+  - Fixed-Point Designer
+  - MATLAB Coder
+  - Simulink
+  - Parallel Computing Toolbox
+  - MATLAB Parallel Server
+  - Polyspace Bug Finder
 
-_Mentioned in Text: Shuffling co-occurrence control._
-  * GL_ ripples_hfos _control.m
+- **External libraries:**
+  - [FieldTrip](https://github.com/fieldtrip/fieldtrip) — tested with 2019 version to avoid plotting issues
+  - [ADRITOOLS](https://github.com/Aleman-Z/ADRITOOLS)
+  - [FMA Toolbox](https://github.com/michael-zugaro/FMAToolbox) — specific analysis functions included in `subfunctions/`
+  - [YASA](https://github.com/raphaelvallat/yasa) (used in the 2020 version only)
 
-_Mentioned in Text: Shuffling Plusmaze co-occurrence control._
-  * GL_plusmaze_control.m
+> ⚠️ FieldTrip and ADRITOOLS must be added to the MATLAB path manually.
 
-_**Figure 3 (A,B,C,D)**: Spectral power during events._
-  * GL_spectral_power.m  (Older version 2020)
-  * GL_spectral_power_2021.m (Updated version 2022)
+---
 
-_**Figure 3 (E,F,G)**: Granger causality during events._
-  * GL_granger.m
-  * GL_granger_Nayanika.m (Computes spectral Granger Causality analysis after combining events of all rats).
+## 📂 Main Scripts by Figure
 
-_**Figure 4A**:_ 
-  * GL_delta_counts.m
+### 🧮 Co-occurrence and Event Counting
 
-_**Figure 4B**: Spindles counts_
-  * GL_spindles_counts.m * (Older version 2020)
-  * GL_spindles_counts_nayanika.m * (Updated version 2022)
+- **Figure 2B, 2D** – Count co-occurring/single events, slow/fast counts and rates:  
+  `GL_hfos_counts.m`
 
-_**Figure 4C**:_ 
-  * GL_delta_spindles.* (Computes the co-occurrence of deltas an spindles from PPC and PFC as done by [Kim et al.,Cell, 2019](https://www.cell.com/cell/pdf/S0092-8674(19)30959-6.pdf))
+- **Text Analysis – Ripple-HFO shuffling controls:**  
+  `GL_ripples_hfos_control.m`  
+  `GL_plusmaze_control.m`
 
-_**Figure 4 (D,E,F)**: Spindle co-occurrence. Before & After counts._	
-  * GL_spindles.m * (Older version 2020)
-  * GL_spindles_Nayanika.m * (Updated version 2022)
+---
 
-_Mentioned in Text: Spindle co-occurrence shuffling control_
-  * GL_spindles_control.m *
- 
-_**Figure 4I**:_ 
-  * GL_swr_disruption.m
- 
-   
----------
-*In the current version (2022): Spindles were computed using an adaptation of the FindSpindles.m function from [FMA toolbox](https://github.com/michael-zugaro/FMAToolbox/tree/master/Analyses) (Zugaro lab).
+### 📈 Spectral Power & Granger Causality (Figure 3)
 
-*In the older version (2020): Spindles were previously detected using the YASA algorithm. The steps to do this were:
-1. Run GL_spindle_matlab2python.m for every session per condition to export NREM epochs to python.
-2. Run GL_yasa_spindles.py for every session per condition to save detections in a .mat file.
+- **Figure 3A–D** – Spectral power:  
+  `GL_spectral_power.m` (2020 version)  
+  `GL_spectral_power_2021.m` (2022 version)
 
---------------------------------
+- **Figure 3E–G** – Granger causality:  
+  `GL_granger.m`  
+  `GL_granger_Nayanika.m` (all rats combined)
 
-## Outdated fork.
-[Plusmaze 2022 update](https://github.com/nayanikab20/GL_fast_slow_hfos) (Nayanika) 
+---
+
+### 🌊 Delta and Spindle Analyses (Figure 4)
+
+- **Figure 4A** – Delta counts:  
+  `GL_delta_counts.m`
+
+- **Figure 4B** – Spindle counts:  
+  `GL_spindles_counts.m` (2020)  
+  `GL_spindles_counts_nayanika.m` (2022)
+
+- **Figure 4C** – Delta–Spindle co-occurrence (inspired by [Kim et al., *Cell*, 2019](https://www.cell.com/cell/pdf/S0092-8674(19)30959-6.pdf)):  
+  `GL_delta_spindles.m`
+
+- **Figure 4D–F** – Spindle co-occurrence (before/after counts):  
+  `GL_spindles.m` (2020)  
+  `GL_spindles_Nayanika.m` (2022)
+
+- **Text Analysis – Spindle co-occurrence control:**  
+  `GL_spindles_control.m`
+
+- **Figure 4I** – SWR disruption:  
+  `GL_swr_disruption.m`
+
+---
+
+## 🔄 Spindle Detection Versions
+
+- **2022 (Current):**  
+  Spindles detected using a modified version of `FindSpindles.m` from the Zugaro Lab's [FMA Toolbox](https://github.com/michael-zugaro/FMAToolbox).
+
+- **2020 (Old):**  
+  Spindles detected using YASA (Python):
+  1. Export NREM epochs using `GL_spindle_matlab2python.m`
+  2. Run spindle detection with `GL_yasa_spindles.py`  
+     Results are saved as `.mat` files
+
+---
+
+## 🧪 Related Work (Outdated)
+
+You can find an outdated fork focused on Plusmaze analysis here:  
+🔗 [Plusmaze 2022 fork by Nayanika](https://github.com/nayanikab20/GL_fast_slow_hfos)
+
+---
+
+## 📬 Contact
+
+For questions or collaboration inquiries, feel free to reach out:
+
+- 👨‍🔬 Adrian Aleman-Zapata: [GitHub](https://github.com/Aleman-Z) | [Email](mailto:adrian.alemanzapata@donders.ru.nl)
+- 📧 Lisa Genzel: [lgenzel@donders.ru.nl](mailto:lgenzel@donders.ru.nl)
+
+---
+
